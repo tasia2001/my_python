@@ -5,3 +5,4 @@ def num_pi(x):
 
 a=int(input("Введите число\n"))
 num_pi(a)
+
