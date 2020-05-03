@@ -8,7 +8,7 @@ import wikipedia
 
 wikipedia.set_lang('ru')
 
-bot = telebot.TeleBot('1144899408:AAHs9EuMWSCJE_TnCytKPrYtl40fHPfMv54')
+bot = telebot.TeleBot('token')
 game_dict=[]
 image_dict={}
 
