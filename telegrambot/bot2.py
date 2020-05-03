@@ -10,6 +10,8 @@ wikipedia.set_lang('ru')
 
 bot = telebot.TeleBot('1144899408:AAHs9EuMWSCJE_TnCytKPrYtl40fHPfMv54')
 game_dict=[]
+image_dict={}
+
 def parse(search):
     #search=input("Введите понятие:   ")
     URL=f"https://ru.wikipedia.org/wiki/{search}"
@@ -33,6 +35,38 @@ def start_message(message):
 Привет, я много всего знаю, так что напиши мне какой-нибудь термин, а я его расскажу!\
     """)
 
+@bot.message_handler(commands=['game'])
+def game(message):
+    keyboard1 = types.InlineKeyboardMarkup()
+    words=list(image_dict.keys())
+    images=list(image_dict.values())
+    #image=random.choice(images)
+    chosen=random.choice(words)
+    print(f"это chosen {chosen}")
+    photo_url=image_dict[f"{chosen}"]
+    print(f"это link2 {photo_url}")
+    print(images)
+    for i in words:
+        mm="z"+i+"|"+photo_url
+        print(mm)
+        k=types.InlineKeyboardButton(text=f"{i}", callback_data=mm)
+        keyboard1.add(k)
+
+    bot.send_photo(message.chat.id, photo_url, reply_markup=keyboard1)
+
+@bot.callback_query_handler(func=lambda call: (call.data).startswith('z'))
+def answer(call):
+    ll=(call.data)[1:]
+    ll=ll.split("|")
+    a1=ll[0] #выбранное слово
+    a2=ll[1] #ссылка правильного ответа
+    a3=image_dict[a1]
+    if a3==a2:
+        bot.send_message(call.message.chat.id,"Верно!")
+    else:
+        bot.send_message(call.message.chat.id,"Неверно!")
+
+
 @bot.message_handler(content_types=['text'])
 def term(message):
     try:
@@ -44,24 +78,26 @@ def term(message):
         words=a[0]
         if a[0]=="Состояниеотпатрулирована":
             bot.send_message(message.chat.id,"Либо Википедия не знает этого, либо это многозначный термин, пока что я такое обработать не могу(")
-        #else:
-        keyboard = types.InlineKeyboardMarkup()
-        url_button = types.InlineKeyboardButton(text="Открыть статью полностью", url=a[1])
-        im_button = types.InlineKeyboardButton(text="Отправить картинку", callback_data=message.text)
-        add_button=types.InlineKeyboardButton(text="Добавить в подборку", callback_data=f"d{message.text}")
-        show_button=types.InlineKeyboardButton(text="Показать подборку",callback_data="show")
-        keyboard.add(url_button)
-        keyboard.add(im_button)
-        keyboard.add(add_button)
-        keyboard.add(show_button)
-        bot.send_message(message.chat.id, words, reply_markup=keyboard)
+        else:
+            keyboard = types.InlineKeyboardMarkup()
+            url_button = types.InlineKeyboardButton(text="Открыть статью полностью", url=a[1])
+            im_button = types.InlineKeyboardButton(text="Отправить картинку", callback_data=message.text)
+            add_button=types.InlineKeyboardButton(text="Добавить в подборку", callback_data=f"d{message.text}")
+            show_button=types.InlineKeyboardButton(text="Показать подборку",callback_data="show")
+            keyboard.add(url_button)
+            keyboard.add(im_button)
+            keyboard.add(add_button)
+            keyboard.add(show_button)
+            bot.send_message(message.chat.id, words, reply_markup=keyboard)
     except:
         bot.send_message(message.chat.id, "Либо Википедия не знает этого, либо это многозначный термин, пока что я такое обработать не могу(")
+
 @bot.callback_query_handler(func=lambda call: call.data=="show")
 def show(call):
     for i in game_dict:
        bot.send_message(call.message.chat.id, f'{i}')
      #bot.send_message(call.message.chat.id,f'{game_dict}')
+
         
 @bot.callback_query_handler(func=lambda query: (query.data).startswith('d'))
 def game_d(query):
@@ -70,7 +106,19 @@ def game_d(query):
     #game_dict.update({query.data:query.data})
     game_dict.append(ww[0])
     game_dict.append('🍓🍓🍓🍓🍓🍓🍓🍓🍓🍓')
-    bot.send_message(query.message.chat.id,"Элемент добавлен")
+    try:
+        pag=wikipedia.page(w)
+        image_url=pag.images[4]
+        if image_url[-3:]=="jpg":
+            image_dict.update({f"{w}":f"{image_url}"})   
+            bot.send_message(query.message.chat.id,"Элемент добавлен") 
+        else:
+            bot.send_message(query.message.chat.id,"Элемент добавлен в подборку, но не доступен для игры, так как в статье нет картинки")
+
+    except: 
+        bot.send_message(query.message.chat.id,"Что-то пошло не так")
+        
+        
 
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
@@ -83,8 +131,6 @@ def query_handler(call):
         bot.answer_callback_query(callback_query_id=call.id, text='')
     except:
         bot.send_message(call.message.chat.id,"Что-то пошло не так:((((")
-
-
 
 
 bot.polling()
