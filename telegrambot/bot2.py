@@ -32,27 +32,25 @@ def parse(search):
 @bot.message_handler(commands=['start','help'])
 def start_message(message):
     bot.send_message(message.chat.id, """\
-Привет, я много всего знаю, так что напиши мне какой-нибудь термин, а я его расскажу!\
+Привет, я много всего знаю, так что напиши мне какой-нибудь термин, а я его расскажу!
+Пришли мне слово и я найду его значение.
+Создавай свою подборку терминов, чтобы в дальнейшем выучить все слова!
+Напиши мне \game и я проверю твои знания.\
     """)
 
 @bot.message_handler(commands=['game'])
 def game(message):
-    keyboard1 = types.InlineKeyboardMarkup()
+    keyboard = types.InlineKeyboardMarkup()
     words=list(image_dict.keys())
     images=list(image_dict.values())
-    #image=random.choice(images)
     chosen=random.choice(words)
-    print(f"это chosen {chosen}")
     photo_url=image_dict[f"{chosen}"]
-    print(f"это link2 {photo_url}")
-    print(images)
     for i in words:
-        mm="z"+i+"|"+photo_url
-        print(mm)
-        k=types.InlineKeyboardButton(text=f"{i}", callback_data=mm)
-        keyboard1.add(k)
-
-    bot.send_photo(message.chat.id, photo_url, reply_markup=keyboard1)
+        mm="z"+i+"|"+chosen
+        button=types.InlineKeyboardButton(text=f"{i}", callback_data=f"{mm}")
+        keyboard.add(button)
+    bot.send_photo(message.chat.id, photo_url, reply_markup=keyboard)
+    #bot.send_message(message.chat.id, text="Что/Кто на картинке?",)
 
 @bot.callback_query_handler(func=lambda call: (call.data).startswith('z'))
 def answer(call):
@@ -60,8 +58,7 @@ def answer(call):
     ll=ll.split("|")
     a1=ll[0] #выбранное слово
     a2=ll[1] #ссылка правильного ответа
-    a3=image_dict[a1]
-    if a3==a2:
+    if a1==a2:
         bot.send_message(call.message.chat.id,"Верно!")
     else:
         bot.send_message(call.message.chat.id,"Неверно!")
@@ -96,14 +93,12 @@ def term(message):
 def show(call):
     for i in game_dict:
        bot.send_message(call.message.chat.id, f'{i}')
-     #bot.send_message(call.message.chat.id,f'{game_dict}')
 
         
 @bot.callback_query_handler(func=lambda query: (query.data).startswith('d'))
 def game_d(query):
     w=(query.data)[1:]
     ww=parse(w)
-    #game_dict.update({query.data:query.data})
     game_dict.append(ww[0])
     game_dict.append('🍓🍓🍓🍓🍓🍓🍓🍓🍓🍓')
     try:
@@ -130,7 +125,7 @@ def query_handler(call):
         else: bot.send_message(call.message.chat.id,"К данной статье фото не прилагается:(")
         bot.answer_callback_query(callback_query_id=call.id, text='')
     except:
-        bot.send_message(call.message.chat.id,"Что-то пошло не так:((((")
+        bot.send_message(call.message.chat.id,"Скорее всего, у этого термина есть несколько значений, поэтому картинка недоступна:(")
 
 
 bot.polling()
